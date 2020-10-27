@@ -1,2 +1,1 @@
-Simple implementation of the Hangman game using ZIO, based on [zio-intro-game](https://github.com/jdegoes/zio-intro-game/blob/master/src/main/scala/net/degoes/zio/Workshop.scala#L870)
-by John De Goes
+Simple implementation of the Hangman game using ZIO, based on [Functional Effects](https://github.com/jdegoes/functional-effects/blob/master/src/main/scala/net/degoes/zio/09-games.scala#L45) workshop by John De Goes

@@ -9,11 +9,9 @@ package object example {
   sealed abstract case class Guess private (char: Char)
   object Guess {
     def make(str: String): Option[Guess] =
-      Some(str)
-        .filter(_.length == 1)
-        .flatMap(_.headOption)
-        .filter(_.isLetter)
-        .map(char => new Guess(char.toLower) {})
+      Some(str.toList).collect {
+        case c :: Nil if c.isLetter => new Guess(c.toLower) {}
+      }
   }
 
   sealed abstract case class Word private (word: String) {
@@ -916,7 +914,7 @@ package object example {
     "youtube"
   )
 
-  val stages = List(
+  val hangmanStages = List(
     """
       #   --------
       #   |      |
