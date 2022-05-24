@@ -2,48 +2,46 @@ package com.example
 import java.io.IOException
 
 import zio._
-import zio.console._
-import zio.random._
 
-object Hangman extends App {
+object Hangman extends ZIOAppDefault {
 
-  def getUserInput(message: String): ZIO[Console, IOException, String] = putStrLn(message) *> getStrLn
+  def getUserInput(message: String): IO[IOException, String] = Console.readLine(message)
 
-  lazy val getGuess: ZIO[Console, IOException, Guess] =
+  lazy val getGuess: IO[IOException, Guess] =
     for {
-      input <- getUserInput("What's your next guess?")
-      guess <- ZIO.fromOption(Guess.make(input)) <> (putStrLn("Invalid input. Please try again...") *> getGuess)
+      input <- getUserInput("What's your next guess? ")
+      guess <- ZIO.from(Guess.make(input)) <> (Console.printLine("Invalid input. Please try again...") <*> getGuess)
     } yield guess
 
-  lazy val getName: ZIO[Console, IOException, Name] =
+  lazy val getName: IO[IOException, Name] =
     for {
-      input <- getUserInput("What's your name?")
-      name  <- ZIO.fromOption(Name.make(input)) <> (putStrLn("Invalid input. Please try again...") *> getName)
+      input <- getUserInput("What's your name? ")
+      name  <- ZIO.from(Name.make(input)) <> (Console.printLine("Invalid input. Please try again...") <*> getName)
     } yield name
 
-  lazy val chooseWord: URIO[Random, Word] =
+  lazy val chooseWord: UIO[Word] =
     for {
-      index <- nextIntBounded(words.length)
-      word  <- ZIO.fromOption(words.lift(index).flatMap(Word.make)).orDieWith(_ => new Error("Boom!"))
+      index <- Random.nextIntBounded(words.length)
+      word  <- ZIO.from(words.lift(index).flatMap(Word.make)).orDieWith(_ => new Error("Boom!"))
     } yield word
 
-  def gameLoop(oldState: State): ZIO[Console, IOException, Unit] =
+  def gameLoop(oldState: State): IO[IOException, Unit] =
     for {
-      guess       <- renderState(oldState) *> getGuess
+      guess       <- renderState(oldState) <*> getGuess
       newState    = oldState.addGuess(guess)
       guessResult = analyzeNewGuess(oldState, newState, guess)
       _ <- guessResult match {
             case GuessResult.Won =>
-              putStrLn(s"Congratulations ${newState.name.name}! You won!") *> renderState(newState)
+              Console.printLine(s"Congratulations ${newState.name.name}! You won!") <*> renderState(newState)
             case GuessResult.Lost =>
-              putStrLn(s"Sorry ${newState.name.name}! You Lost! Word was: ${newState.word.word}") *>
+              Console.printLine(s"Sorry ${newState.name.name}! You Lost! Word was: ${newState.word.word}") <*>
                 renderState(newState)
             case GuessResult.Correct =>
-              putStrLn(s"Good guess, ${newState.name.name}!") *> gameLoop(newState)
+              Console.printLine(s"Good guess, ${newState.name.name}!") <*> gameLoop(newState)
             case GuessResult.Incorrect =>
-              putStrLn(s"Bad guess, ${newState.name.name}!") *> gameLoop(newState)
+              Console.printLine(s"Bad guess, ${newState.name.name}!") <*> gameLoop(newState)
             case GuessResult.Unchanged =>
-              putStrLn(s"${newState.name.name}, You've already tried that letter!") *> gameLoop(newState)
+              Console.printLine(s"${newState.name.name}, You've already tried that letter!") <*> gameLoop(newState)
           }
     } yield ()
 
@@ -54,7 +52,7 @@ object Hangman extends App {
     else if (oldState.word.contains(guess.char)) GuessResult.Correct
     else GuessResult.Incorrect
 
-  def renderState(state: State): URIO[Console, Unit] = {
+  def renderState(state: State): IO[IOException, Unit] = {
 
     /*
         --------
@@ -69,7 +67,7 @@ object Hangman extends App {
         -  -  -  -  -  -  -
         Guesses: a, z, y, x
      */
-    val hangman = ZIO(hangmanStages(state.failuresCount)).orDie
+    val hangman = ZIO.attempt(hangmanStages(state.failuresCount)).orDie
     val word =
       state.word.toList
         .map(c => if (state.guesses.map(_.char).contains(c)) s" $c " else "   ")
@@ -79,7 +77,7 @@ object Hangman extends App {
     val guesses = s" Guesses: ${state.guesses.map(_.char).mkString(", ")}"
 
     hangman.flatMap { hangman =>
-      putStrLn {
+      Console.printLine {
         s"""
          #$hangman
          #
@@ -93,10 +91,10 @@ object Hangman extends App {
     }
   }
 
-  def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
-    (for {
-      name <- putStrLn("Welcome to ZIO Hangman!") *> getName
+  val run: IO[IOException, Unit] =
+    for {
+      name <- Console.printLine("Welcome to ZIO Hangman!") <*> getName
       word <- chooseWord
       _    <- gameLoop(State.initial(name, word))
-    } yield ()).exitCode
+    } yield ()
 }

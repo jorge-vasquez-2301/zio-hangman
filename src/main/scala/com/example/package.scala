@@ -3,7 +3,7 @@ package com
 package object example {
   sealed abstract case class Name private (name: String)
   object Name {
-    def make(name: String): Option[Name] = if (!name.isEmpty) Some(new Name(name) {}) else None
+    def make(name: String): Option[Name] = if (name.nonEmpty) Some(new Name(name) {}) else None
   }
 
   sealed abstract case class Guess private (char: Char)
@@ -22,7 +22,7 @@ package object example {
   }
   object Word {
     def make(word: String): Option[Word] =
-      if (!word.isEmpty && word.forall(_.isLetter)) Some(new Word(word.toLowerCase) {})
+      if (word.nonEmpty && word.forall(_.isLetter)) Some(new Word(word.toLowerCase) {})
       else None
   }
 
@@ -918,19 +918,19 @@ package object example {
     """
       #   --------
       #   |      |
-      #   |      
-      #   |    
-      #   |      
-      #   |     
+      #   |
+      #   |
+      #   |
+      #   |
       #   -
       #""".stripMargin('#'),
     """
       #   --------
       #   |      |
       #   |      0
-      #   |    
-      #   |      
-      #   |     
+      #   |
+      #   |
+      #   |
       #   -
       #""".stripMargin('#'),
     """
@@ -939,7 +939,7 @@ package object example {
       #   |      0
       #   |      |
       #   |      |
-      #   |     
+      #   |
       #   -
       #""".stripMargin('#'),
     """
@@ -948,7 +948,7 @@ package object example {
       #   |      0
       #   |     \|
       #   |      |
-      #   |     
+      #   |
       #   -
       #""".stripMargin('#'),
     """
@@ -957,7 +957,7 @@ package object example {
       #   |      0
       #   |     \|/
       #   |      |
-      #   |     
+      #   |
       #   -
       #""".stripMargin('#'),
     """
